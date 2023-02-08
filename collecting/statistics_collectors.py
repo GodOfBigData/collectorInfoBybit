@@ -1,7 +1,7 @@
 from bots.bots import *
 import multiprocessing
 from json import dumps
-from config import host_redis, port_redis
+from configs.config import host_redis, port_redis
 import redis
 from time import sleep
 
