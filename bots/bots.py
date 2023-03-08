@@ -40,17 +40,20 @@ log_error.setLevel(logging.ERROR)
 
 class BotBybit:
 
-    def __init__(self, api_key: str, api_secret: str):
+    def __init__(self, api_key: str, api_secret: str, mode: str):
         """
         Initializing the parent bot
         :param api_key: api account key
         :type api_key: str
         :param api_secret: api account secret key
         :type api_secret: str
+        :param mode: mode work (testnet or Mainenet)
+        :type mode: str
         :return: None
         """
         self.api_key = api_key
         self.api_secret = api_secret
+        self.mode = mode
 
     def go_command(self, method: str, url: str, secret_key: str, params: dict, proxies: dict):
         """
@@ -126,15 +129,15 @@ class BotBybit:
         Get timestamp function
         :return: time
         """
-        resp = requests.request('GET', url='https://api-testnet.bybit.com/v2/public/time', proxies={'http': proxy})
+        resp = requests.request('GET', url=f'https://{self.mode}.bybit.com/v2/public/time', proxies={'http': proxy})
         server_time = int(float(loads(resp.text)['time_now']) * 1000)
         return server_time
 
 
 class botAnalyst(BotBybit):
 
-    def __init__(self, api_key, api_secret, symbol, interval, proxy):
-        super().__init__(api_key, api_secret)
+    def __init__(self, api_key, api_secret, mode, symbol, interval, proxy):
+        super().__init__(api_key, api_secret, mode)
         self.symbol = symbol
         self.interval = interval
         self.dataFrame = None
@@ -150,7 +153,7 @@ class botAnalyst(BotBybit):
         interval per minutes
         """
         timestamp = floor((self.get_timestamp(self.proxy) - self.interval * 60000 * 200) / 1000)
-        url = f"https://api-testnet.bybit.com/public/linear/kline?symbol={self.symbol}&interval={self.interval}&limit=200&from={timestamp}"
+        url = f"https://{self.mode}.bybit.com/public/linear/kline?symbol={self.symbol}&interval={self.interval}&limit=200&from={timestamp}"
         response = requests.get(url=url)
         data_json = loads(response.text)
         self.dataFrame = pd.DataFrame.from_dict(data_json["result"])
@@ -204,6 +207,21 @@ class botAnalyst(BotBybit):
                 if self.is_far_from_level(high, levels):
                     levels.append((i, high))
         return levels
+
+    def getOrderBook(self):
+        url = f"https://{self.mode}.bybit.com/v2/public/orderBook/L2?symbol={self.symbol}"
+        response = requests.get(url=url)
+        array_data = loads(response.text)["result"]
+        list_orders_buy = list()
+        list_orders_sell = list()
+        for dict_info in array_data:
+            if dict_info["side"] == "Buy":
+                list_orders_buy.append(dict_info)
+            else:
+                list_orders_sell.append(dict_info)
+        return list_orders_buy, list_orders_sell
+
+        
 
 
 class analystOnhcainMetrics:
