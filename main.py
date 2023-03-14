@@ -5,4 +5,5 @@ from time import sleep
 
 
 if __name__ == "__main__":
+    sleep(10)
     setMainMetric(api_key, api_secret, MODE, currency, interval, proxy)
